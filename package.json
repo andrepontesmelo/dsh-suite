@@ -21,6 +21,7 @@
     }
   },
   "dependencies": {
-    "dsh-model-router": "github:andrepontesmelo/dsh-model-router"
+    "dsh-model-router": "github:andrepontesmelo/dsh-model-router",
+    "moving-target": "github:andrepontesmelo/moving-target"
   }
 }
