@@ -1,0 +1,5 @@
+interface:
+  display_name: "Strong Orchestrator"
+  short_description: "Sequential implement + review-loop orchestration"
+policy:
+  allow_implicit_invocation: false

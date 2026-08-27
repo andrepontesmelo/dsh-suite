@@ -1,0 +1,11 @@
+# dsh-suite: plugins ship as dependencies (pnpm installs them at `dsh plugin add`).
+# Routes/config that reference personal providers live in the user's own profile
+# patch, NOT here. This patch inserts only suite-level rows.
+- insert:
+    - id: skill-suite
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        customSkillDirs:
+          # self-referential pattern from the shipped cordis preset:
+          # points discovery at THIS package's skills/ directory.
+          - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('skills/', baseUrl))"

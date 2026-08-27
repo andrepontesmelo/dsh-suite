@@ -1,0 +1,26 @@
+{
+  "name": "dsh-suite",
+  "version": "0.1.0",
+  "description": "The DSH productivity suite: plugins + agent skills for the DeepSeek Harness, installable in one command.",
+  "license": "MIT",
+  "type": "module",
+  "main": "cordis.patch.yml",
+  "scripts": {
+    "test": "node scripts/validate.mjs"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "skills/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "dsh-model-router": "github:andrepontesmelo/dsh-model-router"
+  }
+}
