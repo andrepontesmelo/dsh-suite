@@ -28,7 +28,7 @@ deviation briefly before running it.
 All delegations use one call shape (verified against the live runtime
 2026-08-27):
 
-`workflow.agent(prompt, { provider: "routed", model: "routed" })`
+`workflow.agent(prompt, { provider: "zai", model: "zai/glm-5.3-flash" })`
 
 ## One-time setup: raise code-run ceilings
 
