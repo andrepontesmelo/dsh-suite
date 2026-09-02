@@ -14,10 +14,14 @@ disable-model-invocation: true
 2. **Implement** sequentially: one agent changes code at any moment;
    tasks touching disjoint files may run in parallel.
    Changed lines <= 15: edit inline. Anything larger: delegate (Target Models).
-3. **Review** every delegated implementation in a dedicated review session.
-   Done when: the reviewer returns findings, each tagged `major` or `minor`.
-4. **Iterate**: send findings to the same implementer via `send_message`;
-   keep it alive across rounds instead of spawning fresh agents per fix.
+3. **Review** every implementation, delegated or inline — no size
+   exemption, never by whoever wrote it (Review).
+   Done when: the reviewer returns a verdict.
+4. **Iterate**: on a `major` finding, redo the work — redispatch via
+   whichever transport step 2 chose, or re-edit inline if step 2 chose
+   inline — carrying the findings (Review). Not a kept-alive
+   `send_message` channel; nothing is usually listening on one by the
+   time review finishes.
    Exit when a round returns zero `major` findings, then summarize what shipped.
 
 Prefer a better-fitting orchestration when the case warrants one; sketch the
@@ -81,6 +85,63 @@ the budget it gave the executor.
    Done when: the executor delivered, or you said what you did and why —
    a silent kill is what turned three working executors into three
    redone-inline tasks on 09-01.
+
+## Review
+
+Governs Workflow step 3. Applies to every implementation, inline or
+delegated, any size — 2026-09-01's failure was 11 unreviewed tasks (1
+delegated, 10 inline after its own executors were killed), each
+self-certified by whichever agent wrote it, no independent review
+anywhere in the run.
+
+1. **Spawner: whoever received the implementation as done — the
+   orchestrator that dispatched it, or that got the
+   `wayfinder_spawn_session` result back — dispatches the reviewer next,
+   via `subagent`.** Same-turn: you need the verdict before your next step
+   and consume it yourself, same as any other same-turn lookup (Delegation
+   Transport). Never the implementer. Never the orchestrator waving
+   through its own inline edit.
+2. **Input: the diff (`git diff`, or `git show <sha>` if already
+   committed) and the originating dex task's full text (`dex show <id>
+   --full`).** Not the implementer's commit message or self-report as
+   evidence — the reviewer checks each "Done when" clause against the
+   diff and source itself.
+3. **No write access: enforced procedurally, not by sandbox.** `subagent`
+   exposes only `description`/`prompt` — no read-only dispatch flag
+   exists, and the session permission preset isn't overridable per call.
+   Instruct the reviewer in-prompt not to edit/write/commit/run mutating
+   commands, then run `git status --short` yourself right after it
+   returns, before trusting the verdict. Any change it made voids the
+   round and is itself a `major` finding.
+4. **Verdict, required in the reply:**
+
+       VERDICT: PASS | FAIL
+       FINDINGS: `major: ...` / `minor: ...` lines (file:line where it
+       applies), or "none".
+
+   `FAIL` iff >= 1 `major`. A `major` on a false premise or claim — in the
+   ticket or the diff — is correct even when the code matches what was
+   literally asked; the reviewer owes truth, not compliance.
+5. **On FAIL: append the findings to the dex task description (`dex edit
+   <id> -d`, original text plus a new `## Review round N` block).** The
+   only channel a redispatched `wayfinder_spawn_session` executor reads —
+   its prompt is built from the dex locator, not a free-text argument
+   (verified: the tool takes `root`/`tasks`/`provider`/`model` only, no
+   message field). Redispatch through Delegation Transport next. Don't
+   reach for `send_message`: it addresses `subagent`-tree children only
+   (`subagent_id`, confirmed against session-6045df66's own dispatch log);
+   `wayfinder_spawn_session` sessions run at `delegationDepth: 0`, outside
+   that tree (confirmed: session-163c4f6f vs 43d7ea82 session headers),
+   and by review time a spawned implementer has typically already
+   finished and exited — task 12/session-163c4f6f ran unattended end to
+   end (read, edit, gates, commit) with nothing left to message.
+   Implementer still a live same-turn `subagent`? `send_message` is fine
+   for that case.
+6. **Loop exit.** Done when: a round returns zero `major` findings — then
+   summarize what shipped (Workflow step 4). Three consecutive `FAIL`
+   rounds on the same task: stop, escalate to Andre with the findings
+   history instead of respawning again — silent infinite iteration is its
+   own failure mode.
 
 ## One-time setup: raise code-run ceilings
 
